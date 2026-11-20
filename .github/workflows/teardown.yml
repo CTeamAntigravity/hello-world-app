@@ -1,0 +1,27 @@
+name: Teardown Vercel Deployment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  teardown:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Remove Vercel project
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "Error: VERCEL_TOKEN secret is not set or not accessible to this repository."
+            exit 1
+          fi
+          npx --yes vercel@latest project rm hello-world-app --yes --token="$VERCEL_TOKEN" || \
+            npx --yes vercel@latest project rm hello-world-app --yes --scope ct-eam5 --token="$VERCEL_TOKEN"
+          sleep 3
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://hello-world-app-orcin-seven.vercel.app)
+          echo "Post-teardown HTTP status: $STATUS"
